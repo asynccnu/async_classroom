@@ -10,7 +10,7 @@
 ## URL Params
 
 ```
-    weekno: 周数('1' ~ '20')
+    weekno: 周数('1' ~ '18')
     weekday: 星期('mon', 'tue', 'wed', 'thu', 'fri')
     building: 楼栋('7', '8')
 ```
