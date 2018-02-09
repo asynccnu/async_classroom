@@ -1,0 +1,6 @@
+#--------------------------------mongodb--------------------------------------
+classroom-mongo:
+    image: mongo
+    ports:
+        - "27017:27017"
+    container_name: "classroom_mongo"

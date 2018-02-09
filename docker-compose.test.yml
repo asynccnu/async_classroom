@@ -1,0 +1,8 @@
+#-------------------------------async-classroom-service----------------------
+classroom-api:
+    build: .
+    env_file:
+        - classroom.env
+    command: gunicorn wsgi:app -k aiohttp.worker.GunicornWebWorker -b 0.0.0.0:1299
+    ports:
+        - "1299:1299"
