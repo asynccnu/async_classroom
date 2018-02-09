@@ -1,13 +1,13 @@
 import os
 import xlrd
 import asyncio
-from service.mongoDB import db_setup
 import  copy
 
 
 loop = asyncio.get_event_loop()
 weekdaydb = loop.run_until_complete(db_setup())
 Datafrom = os.getenv('DATAFROM') or '选课手册.xls'
+
 
 # 七号楼所有的教室
 ALLROOM7 = [
@@ -49,6 +49,7 @@ async def init_week() :
 
 
     for i in range(1,19) :
+        print(i,'7')
         one = {
             'bno' : '7',
             'weekNo' : 'week' + str(i),
@@ -59,6 +60,7 @@ async def init_week() :
             weekdaydb.insert_one(one)
 
     for i in range(1,19) :
+        print(i,'8')
         one = {
             'bno' : '8',
             'weekNo' : 'week' + str(i),
@@ -84,6 +86,9 @@ async def remove_from_sheets(sheet,s,e) :
 async def remove_classroom(sheet) :
     """
     根据上课情况，在mongodb中删除不空闲的教室
+    Excel表从第12列开始，分别是 时间1，地点1，时间2，地点2，时间3，地点3
+    时间的格式为星期一第9-10节{1-15周(单)} 或 星期一第9-10节{1-15周} 或 星期一第9-10节{15周}
+    地点只有符合 七号楼和八号楼的标准才算
     :param sheet: Excel 表格中的每个单页
     :return: None
     """
@@ -91,6 +96,7 @@ async def remove_classroom(sheet) :
     day_dict = {'一':'mon','二':'tue','三':'wed','四':'thu','五':'fri',}
     print(rows)
     for i in range(1,rows) :
+        print(i)
         val = sheet.row_values(i)
         for k in range(3) :
             if len(val[11+2*k]) == 0 :
@@ -104,15 +110,13 @@ async def remove_classroom(sheet) :
                 continue
 
             where = str(int(where))
-            weekday = day_dict[when[2]]                  # 星期一到星期五
+            weekday = day_dict[when[2]]                     # 星期一到星期五
             index1 = when.index('第')
             index2 = when.index('节')
-            time = when[index1+1:index2]
-            time = time.split('-')
-            time1 = int(time[0])
-            time2 = int(time[1])
-            for t in range(time1+1,time2) :
+            time = when[index1+1:index2].split('-')
+            for t in range(int(time[0])+1,int(time[1]))  :
                 time.append(str(t))                      # time 是课的节数 如['11','12','13','14]
+
             week_list = list(int(i) for i in when[when.index('{') + 1:when.index(u'\u5468')].split('-'))
             week1 = week_list[0]
             if len(week_list) == 2 :
@@ -123,7 +127,7 @@ async def remove_classroom(sheet) :
                     weeks = list(str(item) for item in range(week1,week2+1) if item % 2 == 0 )
                 else :
                     weeks = list(str(item) for item in range(week1,week2+1) )
-            else :
+            else :                                               # 有些课是单周上的 格式为 （17周）
                 weeks = list(str(item) for item in week_list)
                 print(weeks)
 
@@ -133,14 +137,14 @@ async def remove_classroom(sheet) :
                     res = await weekdaydb.find_one({'bno':where[0],'weekNo':'week'+week})
                     if res is not None :
                         cp = copy.deepcopy(res)
-                        print('cp',when,where,week,t,cp)
+                       # print('cp',when,where,week,t,cp)
                         try :
-                            cp[weekday][t].remove(where)
+                            cp[weekday][t].remove(where)                       # 删除这个教室
                             print(res==cp)
-                            result = await weekdaydb.replace_one(res,cp)
+                            result = await weekdaydb.replace_one(res,cp)       # 代替原先的对象
                             print('matched %d, modified %d' %
                                 (result.matched_count, result.modified_count))
-                        except ValueError:
+                        except ValueError:                                     # 已经没有这个教室
                             continue
 
 
@@ -148,4 +152,4 @@ if __name__ == '__main__' :
     data = xlrd.open_workbook(Datafrom)
     data_sheets = data.sheets()
     loop.run_until_complete(init_week())
-    loop.run_until_complete(remove_from_sheets(data_sheets,0,5))
+    loop.run_until_complete(remove_from_sheets(data_sheets,0,4))
