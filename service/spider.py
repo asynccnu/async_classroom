@@ -2,6 +2,7 @@ import os
 import xlrd
 import asyncio
 import  copy
+from service.mongoDB import db_setup
 
 
 loop = asyncio.get_event_loop()
