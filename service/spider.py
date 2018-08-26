@@ -7,7 +7,7 @@ from service.mongoDB import db_setup
 
 loop = asyncio.get_event_loop()
 weekdaydb = loop.run_until_complete(db_setup())
-Datafrom = os.getenv('DATAFROM') or '选课手册.xls'
+Datafrom = os.getenv('DATAFROM') or '选课2.xlsx'
 
 
 # 七号楼所有的教室
@@ -99,14 +99,15 @@ async def remove_classroom(sheet) :
     for i in range(1,rows) :
         print(i)
         val = sheet.row_values(i)
+        #print(val)
         for k in range(3) :
             if len(val[11+2*k]) == 0 :
                 break
             when = val[11+2*k]
             where = val[11+2*k+1]
             # 忽略不符合要求的星期和教室
-            if not isinstance(where,float) \
-                    or str(int(where)) not in ALLROOM8+ALLROOM7 \
+            if not isinstance(where,str) \
+                    or where not in ALLROOM8+ALLROOM7 \
                     or day_dict.get(when[2]) is None :
                 continue
 
@@ -114,12 +115,30 @@ async def remove_classroom(sheet) :
             weekday = day_dict[when[2]]                     # 星期一到星期五
             index1 = when.index('第')
             index2 = when.index('节')
-            time = when[index1+1:index2].split('-')
-            for t in range(int(time[0])+1,int(time[1]))  :
-                time.append(str(t))                      # time 是课的节数 如['11','12','13','14]
+            tmp_time = when[index1+1:index2]
+            time = []
+            #print(tmp_time)
+            #print(val)
+            if ',' in tmp_time:
+                tmp_time = tmp_time.split(',')
+                for each_ in tmp_time:
+                    each = each_.split('-')
+                    print(each)
+                    for t in range(int(each[0]),int(each[1])+1):
+                        print(t)
+                        time.append(str(t))
+                #print(time)
+                #print(tmp_time)
+            else:
+                time = when[index1+1:index2].split('-')
+                for t in range(int(time[0])+1,int(time[1]))  :
+                    time.append(str(t))                      # time 是课的节数 如['11','12','13','14]
+                #print(when)
+                #print(time)
 
             week_list = list(int(i) for i in when[when.index('{') + 1:when.index(u'\u5468')].split('-'))
             week1 = week_list[0]
+            #print(week_list)
             if len(week_list) == 2 :
                 week2 = week_list[1]
                 if '单' in when :
@@ -141,7 +160,7 @@ async def remove_classroom(sheet) :
                        # print('cp',when,where,week,t,cp)
                         try :
                             cp[weekday][t].remove(where)                       # 删除这个教室
-                            print(res==cp)
+                            #print(res==cp)
                             result = await weekdaydb.replace_one(res,cp)       # 代替原先的对象
                             print('matched %d, modified %d' %
                                 (result.matched_count, result.modified_count))
@@ -152,5 +171,6 @@ async def remove_classroom(sheet) :
 if __name__ == '__main__' :
     data = xlrd.open_workbook(Datafrom)
     data_sheets = data.sheets()
-    loop.run_until_complete(init_week())
-    loop.run_until_complete(remove_from_sheets(data_sheets,0,4))
+    #loop.run_until_complete(init_week())
+    loop.run_until_complete(remove_from_sheets(data_sheets,0,5))
+    loop.close()
