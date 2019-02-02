@@ -99,12 +99,12 @@ async def remove_classroom(sheet) :
     for i in range(1,rows) :
         print(i)
         val = sheet.row_values(i)
-        #print(val)
+        # change in 2018-2019 (2): base from 11 -> 12
         for k in range(3) :
-            if len(val[11+2*k]) == 0 :
+            if len(val[12+2*k]) == 0 :
                 break
-            when = val[11+2*k]
-            where = val[11+2*k+1]
+            when = val[12+2*k]
+            where = val[12+2*k+1]
             # 忽略不符合要求的星期和教室
             if not isinstance(where,str) \
                     or where not in ALLROOM8+ALLROOM7 \
