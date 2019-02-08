@@ -2,12 +2,12 @@ import os
 import xlrd
 import asyncio
 import  copy
-from service.mongoDB import db_setup
+from mongoDB import db_setup
 
 
 loop = asyncio.get_event_loop()
 weekdaydb = loop.run_until_complete(db_setup())
-Datafrom = os.getenv('DATAFROM') or '选课2.xlsx'
+Datafrom = os.getenv('DATAFROM') or '/home/song-ruyang/class.xls'
 
 
 # 七号楼所有的教室
@@ -99,12 +99,15 @@ async def remove_classroom(sheet) :
     for i in range(1,rows) :
         print(i)
         val = sheet.row_values(i)
-        # change in 2018-2019 (2): base from 11 -> 12
+        # change in 2018-2019 (2): base from 11 -> 10
         for k in range(3) :
-            if len(val[12+2*k]) == 0 :
+            if len(val[9+2*k]) == 0:
                 break
-            when = val[12+2*k]
-            where = val[12+2*k+1]
+            try:
+                when = val[9+2*k]
+                where = val[9+2*k+1]
+            except:
+                continue
             # 忽略不符合要求的星期和教室
             if not isinstance(where,str) \
                     or where not in ALLROOM8+ALLROOM7 \
@@ -154,6 +157,7 @@ async def remove_classroom(sheet) :
 
             for week in weeks :
                 for t in time :
+                    print(where[0], 'week'+week)
                     res = await weekdaydb.find_one({'bno':where[0],'weekNo':'week'+week})
                     if res is not None :
                         cp = copy.deepcopy(res)
@@ -171,6 +175,7 @@ async def remove_classroom(sheet) :
 if __name__ == '__main__' :
     data = xlrd.open_workbook(Datafrom)
     data_sheets = data.sheets()
-    #loop.run_until_complete(init_week())
+#    loop.run_until_complete(init_week())
+#    print("--Init Over--")
     loop.run_until_complete(remove_from_sheets(data_sheets,0,5))
     loop.close()
