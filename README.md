@@ -7,6 +7,8 @@
 ```
     MONGODB_HOST=<host>
     MONGODB_PORT=<port>
+    WEEKSET=string
+    WEEKDB=string
 ```
 
 服务器，命令:
